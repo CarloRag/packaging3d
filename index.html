@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Packaging 3D</title>
+  <meta name="description" content="Dal file di fustella al modello 3D del packaging, direttamente nel browser.">
+  <link rel="stylesheet" href="styles/main.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+      "pdfjs-dist": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.mjs"
+    }
+  }
+  </script>
+  <script type="module" src="src/main.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 8 12 4l8 4v8l-8 4-8-4Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M4 8l8 4 8-4M12 12v8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>
+      <span>Packaging 3D</span>
+    </a>
+    <span class="topbar-note">Elaborazione locale · il file non lascia il dispositivo</span>
+  </header>
+
+  <!-- Landing -->
+  <main id="view-landing" class="view landing" data-view="landing">
+    <section class="landing-inner">
+      <p class="eyebrow">Dalla fustella al solido</p>
+      <h1>Carica il file di stampa, guarda il packaging in 3D.</h1>
+      <p class="lead">Un solo file, PDF o immagine. Misure, pieghe e artwork vengono ricavati nel browser, con la fonte e la confidenza di ogni dato.</p>
+      <a class="btn btn-primary btn-lg" href="#/app">Inizia</a>
+    </section>
+  </main>
+
+  <!-- Workspace: upload, analisi, vista 3D -->
+  <main id="view-app" class="view workspace" data-view="app" hidden>
+    <aside class="col col-files" aria-label="File della sessione">
+      <h2 class="col-title">File</h2>
+      <label id="dropzone" class="dropzone" tabindex="0">
+        <input id="file-input" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" hidden>
+        <strong>Trascina qui la fustella</strong>
+        <span>oppure tocca per scegliere · PDF, PNG, JPG</span>
+      </label>
+      <ul id="file-list" class="file-list" aria-live="polite"></ul>
+      <p id="file-empty" class="muted small">Nessun file caricato in questa sessione.</p>
+    </aside>
+
+    <section class="col col-preview" aria-label="Anteprima e vista 3D">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-flat" aria-selected="false" aria-controls="pane-flat">Fustellato piatto</button>
+        <button class="tab" role="tab" id="tab-3d" aria-selected="true" aria-controls="pane-3d">Vista 3D</button>
+      </div>
+
+      <div id="pane-flat" class="pane" role="tabpanel" aria-labelledby="tab-flat" hidden>
+        <div id="flat-preview" class="flat-preview">
+          <p class="muted">Carica un file per vedere l'anteprima del fustellato.</p>
+        </div>
+      </div>
+
+      <div id="pane-3d" class="pane" role="tabpanel" aria-labelledby="tab-3d">
+        <div id="viewer" class="viewer">
+          <canvas id="viewer-canvas" aria-label="Modello 3D del packaging"></canvas>
+          <div class="viewer-toolbar" role="toolbar" aria-label="Controlli 3D">
+            <button class="tool" data-action="reset" title="Reset vista">Reset</button>
+            <button class="tool" data-action="xray" aria-pressed="false" title="X-ray">X-ray</button>
+            <button class="tool" data-action="autorotate" aria-pressed="true" title="Rotazione automatica">Auto</button>
+            <button class="tool" data-action="background" title="Sfondo bianco / neutro">Sfondo</button>
+            <button class="tool" data-action="fullscreen" title="Schermo intero">Schermo intero</button>
+          </div>
+          <div class="viewer-axes" role="group" aria-label="Rotazione per asse (90°)">
+            <span class="axis-label axis-x">X</span>
+            <button class="tool tool-sm" data-rotate="x" data-dir="-1" aria-label="Ruota X in senso antiorario">↺</button>
+            <button class="tool tool-sm" data-rotate="x" data-dir="1" aria-label="Ruota X in senso orario">↻</button>
+            <span class="axis-label axis-y">Y</span>
+            <button class="tool tool-sm" data-rotate="y" data-dir="-1" aria-label="Ruota Y in senso antiorario">↺</button>
+            <button class="tool tool-sm" data-rotate="y" data-dir="1" aria-label="Ruota Y in senso orario">↻</button>
+            <span class="axis-label axis-z">Z</span>
+            <button class="tool tool-sm" data-rotate="z" data-dir="-1" aria-label="Ruota Z in senso antiorario">↺</button>
+            <button class="tool tool-sm" data-rotate="z" data-dir="1" aria-label="Ruota Z in senso orario">↻</button>
+          </div>
+          <p id="viewer-error" class="viewer-error" hidden></p>
+        </div>
+      </div>
+    </section>
+
+    <aside class="col col-data" aria-label="Dati del packaging">
+      <h2 class="col-title">Dati</h2>
+      <form id="dims-form" class="dims" novalidate>
+        <div class="field-row">
+          <label class="field">
+            <span>L <small>larghezza</small></span>
+            <span class="input-unit"><input name="L" type="number" inputmode="decimal" min="1" max="2000" step="0.5" value="75" required><em>mm</em></span>
+          </label>
+          <label class="field">
+            <span>P <small>profondità</small></span>
+            <span class="input-unit"><input name="P" type="number" inputmode="decimal" min="1" max="2000" step="0.5" value="25" required><em>mm</em></span>
+          </label>
+          <label class="field">
+            <span>H <small>altezza</small></span>
+            <span class="input-unit"><input name="H" type="number" inputmode="decimal" min="1" max="2000" step="0.5" value="105" required><em>mm</em></span>
+          </label>
+        </div>
+        <label class="field">
+          <span>Tipo di astuccio</span>
+          <select name="type">
+            <option value="tuck-end" selected>Astuccio con linguetta (tuck-end)</option>
+          </select>
+        </label>
+        <button class="btn btn-primary" type="submit">Rigenera 3D</button>
+      </form>
+
+      <dl class="meta">
+        <div><dt>Fonte</dt><dd id="meta-source">manuale</dd></div>
+        <div><dt>Confidenza</dt><dd><span id="meta-confidence" class="badge badge-low">bassa</span></dd></div>
+      </dl>
+      <ul id="warnings" class="warnings" aria-live="polite"></ul>
+      <p class="muted small">Le misure si inseriscono a mano. Il riconoscimento automatico dal file arriverà con il parser.</p>
+    </aside>
+  </main>
+</body>
+</html>
